@@ -5,32 +5,38 @@ async function deployQuestProvider() {
     "QuestProvider"
   );
   const QuestProvider = await QuestProviderFactory.deploy();
-  await QuestProvider.waitForDeployment(); // 트랜잭션이 완료될 때까지 대기
+  await QuestProvider.waitForDeployment();
   console.log(
-    `QuestProvider 컨트랙트가 ${QuestProvider.address}에 배포되었습니다.`
-  ); // address 사용
-  return QuestProvider.address; // 올바른 주소 반환
+    `QuestProvider 컨트랙트가 ${await QuestProvider.getAddress()}에 배포되었습니다.`
+  );
+  return QuestProvider.getAddress();
 }
 
 async function deployEduchainQuiz(questProviderAddress) {
   const EduchainQuizFactory = await hre.ethers.getContractFactory(
     "EduchainQuiz"
   );
-
-  // questProviderAddress는 생성자 인자로 전달
   const EduchainQuiz = await EduchainQuizFactory.deploy(questProviderAddress);
-  await EduchainQuiz.waitForDeployment(); // 트랜잭션이 완료될 때까지 대기
+  await EduchainQuiz.waitForDeployment();
   console.log(
-    `EduchainQuiz 컨트랙트가 ${EduchainQuiz.address}에 배포되었습니다.`
-  ); // address 사용
+    `EduchainQuiz 컨트랙트가 ${await EduchainQuiz.getAddress()}에 배포되었습니다.`
+  );
 }
 
 async function main() {
-  const questProviderAddress = await deployQuestProvider(); // QuestProvider 주소 가져오기
-  await deployEduchainQuiz(questProviderAddress); // EduchainQuiz 배포 시 주소를 전달
+  try {
+    const questProviderAddress = await deployQuestProvider();
+    if (!questProviderAddress) {
+      throw new Error("QuestProvider 주소를 가져오는 데 실패했습니다.");
+    }
+    await deployEduchainQuiz(questProviderAddress);
+  } catch (error) {
+    console.error("배포 중 오류 발생:", error);
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error("스크립트 실행 중 예기치 않은 오류 발생:", error);
   process.exitCode = 1;
 });
